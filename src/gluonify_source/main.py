@@ -8,8 +8,9 @@ from __future__ import annotations
 from collections.abc import Callable
 
 from fastapi import FastAPI
-from gluonify import CharmVerifier, GdownClient, GluonifyServices, Principal
+from gluonify import CharmVerifier, GluonifyServices, Principal
 from gluonify_fastapi import GluonifyAuth, create_app, serve
+from gluonify_gdown import GdownClient
 
 from . import __version__, platform
 from .config import READ, WRITE, SourceConfig
@@ -23,7 +24,7 @@ def build(
     services: GluonifyServices | None = None,
     *,
     verifier: Callable[[], CharmVerifier] | None = None,
-    gdown: Callable[[GluonifyServices], GdownClient] = GdownClient.from_env,
+    gdown: Callable[[GluonifyServices], GdownClient] | None = None,
 ) -> FastAPI:
     """Builds the application. ``verifier`` and ``gdown`` are replaceable in tests (as the Java tests fake Charm and Gdown)."""
     s = services or GluonifyServices()
@@ -45,7 +46,8 @@ def build(
         dev_identity=dev,
     )
     app.state.config = cfg
-    app.state.notes = note_store(cfg.store, s, gdown)
+    # plain bolt:// is accepted only with the development identity, off the platform (the SDK refuses it otherwise)
+    app.state.notes = note_store(cfg.store, s, gdown or (lambda svc: GdownClient.from_env(svc, insecure_dev=cfg.dev)))
     app.state.health.readiness("notes storage", lambda: (app.state.notes.ready(), {"store": app.state.notes.kind()}))
     app.include_router(api.router)
     app.include_router(platform.router)

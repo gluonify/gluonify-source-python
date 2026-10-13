@@ -4,11 +4,11 @@
 
 > **Variantes Java.** Le même service en Quarkus existe dans [`gluonify-source`](https://github.com/gluonify/gluonify-source) (Maven) et [`gluonify-source-gradle`](https://github.com/gluonify/gluonify-source-gradle) (Gradle). Celui-ci en est l'équivalent **Python**, dans la mesure où il se transpose.
 
-**Le point de départ d'un service Python sur [Gluonify](https://gluonify.io).** Un petit service complet (des « notes ») construit avec **FastAPI** et **uvicorn** au-dessus du SDK Python de Gluonify ([`gluonify-plasma-python`](https://github.com/gluonify/gluonify-plasma-python) : distributions `gluonify` et `gluonify-fastapi`). Il montre, avec du code qui tourne et des tests, comment :
+**Le point de départ d'un service Python sur [Gluonify](https://gluonify.io).** Un petit service complet (des « notes ») construit avec **FastAPI** et **uvicorn** au-dessus du SDK Python de Gluonify ([`gluonify-plasma-python`](https://github.com/gluonify/gluonify-plasma-python) : distributions `gluonify`, `gluonify-fastapi` et `gluonify-gdown`). Il montre, avec du code qui tourne et des tests, comment :
 
 1. faire un **service REST** (validation, rôles, OpenAPI) ;
 2. **vérifier les jetons de Charm** et les rôles, et donner à un navigateur de quoi se connecter ;
-3. garder les données dans **gDown**, la base graphe de la plateforme (base dédiée, pilote officiel `neo4j` sur Bolt) ;
+3. garder les données dans **gDown**, la base graphe de la plateforme (base dédiée, pilote officiel `neo4j` sur Bolt avec TLS, ou API HTTP de gDown) ;
 4. exposer les points de **santé** que la plateforme surveille.
 
 > Les applications Python tournent sur Gluonify avec le `python3` de Debian 13 (**CPython 3.13**) de chaque nœud : Bup installe vos dépendances verrouillées dans un venv, signe le code et le venv dans une archive, et le nœud l'exécute dans le même bac à sable que les applications natives. Pas de Dockerfile.
@@ -88,9 +88,9 @@ L'API vérifie les jetons porteurs émis par **Charm** (JWT, ES256) avec `requir
 
 ## 5. Stockage : mémoire ou gDown
 
-`SOURCE_STORE=auto` (défaut) utilise **gDown** quand la plateforme fournit une base dédiée (`GLUONIFY_GDOWN_DATABASE`, venant de `"gdownDatabase": true`), la mémoire sinon. `GraphNoteStore` exécute quatre instructions Cypher paramétrées par `GdownClient` du SDK (le pilote `neo4j`, sur la base dédiée). La disponibilité répond 503 tant que gDown ne répond pas ; la vie n'en dépend jamais.
+`SOURCE_STORE=auto` (défaut) utilise **gDown** quand la plateforme fournit une base dédiée (`GLUONIFY_GDOWN_DATABASE`, venant de `"gdownDatabase": true`), la mémoire sinon. `GraphNoteStore` exécute quatre instructions Cypher paramétrées par `GdownClient` de `gluonify-gdown`, sur la base dédiée : par Bolt avec TLS quand la plateforme injecte `GLUONIFY_GDOWN_BOLT_URL` (`bolt+s://`, AC `GLUONIFY_GDOWN_CA_FILE`), sinon par l'API HTTP de gDown (`POST /db/<base>/query`). `/api/platform` dit lequel (`gdownTransport`). La disponibilité répond 503 tant que gDown ne répond pas ; la vie n'en dépend jamais.
 
-> **Point ouvert** : la plateforme démarre aujourd'hui gDown avec Bolt désactivé ; tant que Higgs n'ouvre pas Bolt aux applications, le stockage gDown fonctionne avec un gDown que vous lancez vous-même (`GLUONIFY_GDOWN_BOLT_URL`).
+> Aujourd'hui la plateforme n'injecte pas encore d'adresse Bolt (Bolt pour les applications, TLS obligatoire, est en construction) : l'API HTTP est utilisée et l'application fonctionne telle quelle. Une adresse `bolt://` sans TLS est refusée, sauf avec `SOURCE_DEV=1` hors de la plateforme (un gDown local).
 
 ## 6. Configuration
 
@@ -104,11 +104,11 @@ Toute la configuration vient de l'environnement (la plateforme, ou le coffre Top
 | `GLUONIFY_SOURCE_OIDC_ISSUER`, `GLUONIFY_SOURCE_OIDC_AUDIENCE`, `GLUONIFY_SOURCE_OIDC_CLIENT_ID` | valeurs `GLUONIFY_OIDC_*` de la plateforme | l'emportent sur les valeurs de la plateforme |
 | `GLUONIFY_SOURCE_CHARM_PUBLIC_URL` | `GLUONIFY_OIDC_PUBLIC_URL`, sinon déduite de l'émetteur | adresse publique de Charm pour le navigateur |
 | `SOURCE_AUTH_SCOPE` | `openid` | portée de la connexion du navigateur |
-| `GLUONIFY_GDOWN_BOLT_URL` | déduite de `GLUONIFY_SERVICE_GDOWN_URL`, port 7687 | adresse Bolt de gDown |
+| `GLUONIFY_GDOWN_BOLT_URL`, `GLUONIFY_GDOWN_CA_FILE` | injectées par la plateforme ; absentes : API HTTP à `GLUONIFY_SERVICE_GDOWN_URL` | adresse Bolt de gDown (`bolt+s://`) et AC de confiance |
 
 ## 7. Construire et déployer
 
-Bup reconnaît un projet Python à son `pyproject.toml`, exige le fichier de verrouillage, analyse le code (SonarQube, règles d'appels dangereux, `pip-audit`), installe `requirements.lock` par `pip install --require-hashes` dans un venv, et signe le code et le venv dans un gzip. **`uses` est déduit** des marqueurs `[gluonify.uses]` des distributions du SDK installées dans ce venv (`gluonify` déclare `charm` et `gdown`) ; `gluonify.json` ne dit donc que ce qui ne se déduit pas :
+Bup reconnaît un projet Python à son `pyproject.toml`, exige le fichier de verrouillage, analyse le code (SonarQube, règles d'appels dangereux, `pip-audit`), installe `requirements.lock` par `pip install --require-hashes` dans un venv, et signe le code et le venv dans un gzip. **`uses` est déduit** des marqueurs `[gluonify.uses]` des distributions du SDK installées dans ce venv (`gluonify` déclare `charm`, `gluonify-gdown` déclare `gdown`) ; `gluonify.json` ne dit donc que ce qui ne se déduit pas :
 
 ```json
 {"gdownDatabase": true, "portEnv": "PORT", "health": "/q/health/ready"}
@@ -119,7 +119,7 @@ Après un changement de dépendance : `uv lock && uv export --format requirement
 ## 8. Tester
 
 ```bash
-uv run pytest --cov          # 47 tests
+uv run pytest --cov          # 50 tests
 uv run ruff check . && uv run ruff format --check .
 ```
 
@@ -131,7 +131,7 @@ Charm est simulé par une paire de clés P-256 dont le vérificateur lit le JWKS
 |---|---|
 | API REST des notes, rôles, validation, OpenAPI | ✅ |
 | Jetons de Charm, `/api/auth-config` | ✅ |
-| Stockage Gdown (API HTTP en Java) | ✅ par Bolt (voir le point ouvert du §5) |
+| Stockage Gdown (API HTTP en Java) | ✅ Bolt avec TLS quand il est injecté, API HTTP sinon |
 | Stockage en mémoire, santé ready/live, `/api/platform` | ✅ |
 | Interface Vue (Quinoa) | ❌ non reprise : servir une interface construite par `StaticFiles`, ou l'héberger sur Field |
 | Stockage en fichiers (`/distributed/std`) | ❌ |

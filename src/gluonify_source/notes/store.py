@@ -7,7 +7,7 @@ import uuid
 from datetime import UTC, datetime
 from typing import Any, Protocol
 
-from gluonify import GdownClient
+from gluonify_gdown import GdownClient
 
 from .models import NewNote, Note
 
@@ -60,7 +60,7 @@ class MemoryNoteStore:
 
 
 class GraphNoteStore:
-    """Notes in gDown, the platform's graph database, through the SDK (official neo4j driver over Bolt, dedicated database)."""
+    """Notes in gDown (dedicated database) through gluonify-gdown: Bolt with TLS, or gDown's HTTP API."""
 
     def __init__(self, client: GdownClient) -> None:
         self.client = client

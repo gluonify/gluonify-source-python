@@ -4,7 +4,8 @@ from __future__ import annotations
 
 from collections.abc import Callable
 
-from gluonify import GdownClient, GluonifyServices
+from gluonify import GluonifyServices
+from gluonify_gdown import GdownClient
 
 from .store import GraphNoteStore, MemoryNoteStore, NoteStore
 

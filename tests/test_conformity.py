@@ -29,6 +29,12 @@ def test_no_sensitive_files() -> None:
     assert bad == []
 
 
+def test_depends_on_the_three_sdk_distributions() -> None:
+    deps = tomllib.loads((ROOT / "pyproject.toml").read_text())["project"]["dependencies"]
+    names = {d.split("=")[0].split(">")[0] for d in deps}
+    assert {"gluonify", "gluonify-fastapi", "gluonify-gdown"} <= names
+
+
 def test_no_dockerfile() -> None:
     assert not list(ROOT.glob("Dockerfile*"))
 
@@ -37,6 +43,7 @@ def test_uses_inferred_plus_declared_equal_the_appspec() -> None:
     site = next((ROOT / ".venv/lib").glob("python3.*/site-packages"))
     inferred = markers.infer(site)
     assert set(inferred.services) == {"charm", "gdown"}
+    assert inferred.sources == {"charm": ("gluonify",), "gdown": ("gluonify-gdown",)}  # gdown only from gluonify-gdown
     declared = json.loads((ROOT / "gluonify.json").read_text()).get("uses", [])
     effective = {u.lstrip("?") for u in inferred.uses(declared)}
     spec = json.loads((ROOT / "deploy/appspec.json").read_text())

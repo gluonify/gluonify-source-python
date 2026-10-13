@@ -20,6 +20,7 @@ def test_platform_info(charm: FakeCharm, gdown: FakeGdown) -> None:
         "selfUrl": "http://10.0.0.5:8080",
         "services": {"charm": "http://charm:8080", "gdown": "http://gdown:8080"},
         "store": "gdown",
+        "gdownTransport": "bolt",
         "storeReady": True,
     }
     assert "pw" not in str(body)
@@ -118,6 +119,28 @@ def test_store_choice() -> None:
     assert effective_store("memory", "db") == "memory"
     with pytest.raises(ValueError, match="unknown SOURCE_STORE"):
         note_store("files", GluonifyServices({}))
+
+
+def test_without_bolt_url_the_store_uses_the_http_api() -> None:
+    env = {k: v for k, v in PLATFORM.items() if k != "GLUONIFY_GDOWN_BOLT_URL"}
+    app = build(GluonifyServices(env))
+    assert app.state.notes.kind() == "gdown"
+    assert app.state.notes.client.kind == "http"
+    assert app.state.notes.client.transport.url == "http://gdown:8080"
+
+
+def test_plain_bolt_refused_on_the_platform_and_allowed_for_dev() -> None:
+    with pytest.raises(Exception, match="without TLS"):
+        build(GluonifyServices({**PLATFORM, "GLUONIFY_GDOWN_BOLT_URL": "bolt://gdown:7687"}))
+    dev = {
+        "SOURCE_DEV": "1",
+        "SOURCE_STORE": "gdown",
+        "GLUONIFY_GDOWN_DATABASE": "d",
+        "GLUONIFY_GDOWN_USER": "u",
+        "GLUONIFY_GDOWN_PASSWORD": "p",
+        "GLUONIFY_GDOWN_BOLT_URL": "bolt://localhost:7687",
+    }
+    assert build(GluonifyServices(dev)).state.notes.client.kind == "bolt"
 
 
 def test_gdown_without_database_fails_at_start() -> None:

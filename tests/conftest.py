@@ -11,7 +11,8 @@ import jwt
 import pytest
 from cryptography.hazmat.primitives.asymmetric import ec
 from fastapi.testclient import TestClient
-from gluonify import CharmVerifier, GdownClient, GluonifyServices
+from gluonify import CharmVerifier, GluonifyServices
+from gluonify_gdown import BoltTransport, GdownClient
 
 from gluonify_source.main import build
 
@@ -108,6 +109,7 @@ PLATFORM = {
     "GLUONIFY_SELF_URL": "http://10.0.0.5:8080",
     "GLUONIFY_SERVICE_CHARM_URL": "http://charm:8080",
     "GLUONIFY_SERVICE_GDOWN_URL": "http://gdown:8080",
+    "GLUONIFY_GDOWN_BOLT_URL": "bolt+s://gdown:7687",
     "GLUONIFY_GDOWN_DATABASE": "app_1234",
     "GLUONIFY_GDOWN_USER": "app_1234",
     "GLUONIFY_GDOWN_PASSWORD": "pw",
@@ -118,7 +120,9 @@ PLATFORM = {
 
 def client(env: Mapping[str, str], charm: FakeCharm, gdown: FakeGdown | None = None) -> TestClient:
     def fake_gdown(s: GluonifyServices) -> GdownClient:
-        real = GdownClient.from_env(s)  # exercises the real resolution of the SDK
-        return GdownClient(real.url, real.database, None, driver=gdown)
+        real = GdownClient.from_env(s)  # exercises the real resolution of the SDK (Bolt with TLS here)
+        t = real.transport
+        assert isinstance(t, BoltTransport)
+        return GdownClient(BoltTransport(t.url, t.database, ("u", "p"), factory=lambda *_: gdown))  # type: ignore[arg-type,return-value]
 
     return TestClient(build(GluonifyServices(dict(env)), verifier=charm.verifier, gdown=fake_gdown))
