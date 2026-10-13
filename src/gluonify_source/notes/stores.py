@@ -3,11 +3,12 @@
 from __future__ import annotations
 
 from collections.abc import Callable
+from typing import cast
 
 from gluonify import GluonifyServices
-from gluonify_gdown import GdownClient
 
-from .store import GraphNoteStore, MemoryNoteStore, NoteStore
+from .gdown import gdown_driver
+from .store import Driver, GraphNoteStore, MemoryNoteStore, NoteStore
 
 DEDICATED_DATABASE = "GLUONIFY_GDOWN_DATABASE"
 
@@ -22,11 +23,18 @@ def effective_store(store: str, dedicated_database: str | None) -> str:
 def note_store(
     store: str,
     services: GluonifyServices,
-    gdown: Callable[[GluonifyServices], GdownClient] = GdownClient.from_env,
+    gdown: Callable[[GluonifyServices], Driver] | None = None,
+    dev: bool = False,
 ) -> NoteStore:
     kind = effective_store(store, services.env(DEDICATED_DATABASE))
     if kind == "memory":
         return MemoryNoteStore()
     if kind == "gdown":
-        return GraphNoteStore(gdown(services))
+        database = services.env(DEDICATED_DATABASE)
+        if database is None:
+            raise ValueError(
+                f'SOURCE_STORE=gdown needs a dedicated database ({DEDICATED_DATABASE}): deploy with "gdownDatabase": true'
+            )
+        driver = gdown(services) if gdown else cast(Driver, gdown_driver(services.environ, dev=dev))
+        return GraphNoteStore(driver, database.strip())
     raise ValueError(f'unknown SOURCE_STORE: "{kind}" (auto, memory or gdown)')

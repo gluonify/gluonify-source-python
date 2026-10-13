@@ -23,7 +23,6 @@ def info(request: Request, _: Annotated[Principal, Depends(require_roles(READ))]
         "selfUrl": s.self_url or "",
         "services": s.granted(),
         "store": request.app.state.notes.kind(),
-        "gdownTransport": getattr(getattr(request.app.state.notes, "client", None), "kind", None),
         "storeReady": request.app.state.notes.ready(),
     }
 

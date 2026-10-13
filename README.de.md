@@ -4,11 +4,11 @@
 
 > **Java-Varianten.** Derselbe Dienst in Quarkus liegt in [`gluonify-source`](https://github.com/gluonify/gluonify-source) (Maven) und [`gluonify-source-gradle`](https://github.com/gluonify/gluonify-source-gradle) (Gradle). Dieser hier ist sein **Python**-Gegenstück, soweit es sich übertragen lässt.
 
-**Der Ausgangspunkt für einen Python-Dienst auf [Gluonify](https://gluonify.io).** Ein kleiner, vollständiger Dienst („Notizen“), gebaut mit **FastAPI** und **uvicorn** auf dem Python-SDK von Gluonify ([`gluonify-plasma-python`](https://github.com/gluonify/gluonify-plasma-python): Distributionen `gluonify`, `gluonify-fastapi` und `gluonify-gdown`). Er zeigt mit lauffähigem Code und Tests, wie man:
+**Der Ausgangspunkt für einen Python-Dienst auf [Gluonify](https://gluonify.io).** Ein kleiner, vollständiger Dienst („Notizen“), gebaut mit **FastAPI** und **uvicorn** auf dem Python-SDK von Gluonify ([`gluonify-plasma-python`](https://github.com/gluonify/gluonify-plasma-python): Distributionen `gluonify` und `gluonify-fastapi`). Er zeigt mit lauffähigem Code und Tests, wie man:
 
 1. einen **REST-Dienst** baut (Validierung, Rollen, OpenAPI);
 2. **Charm-Token prüft** und Rollen kontrolliert, und einem Browser gibt, was er zur Anmeldung braucht;
-3. Daten in **gDown** hält, der Graphdatenbank der Plattform (eigene Datenbank, offizieller `neo4j`-Treiber über Bolt mit TLS, oder die HTTP-API von gDown);
+3. Daten in **gDown** hält, der Graphdatenbank der Plattform (eigene Datenbank, offizieller `neo4j`-Treiber über Bolt mit TLS);
 4. die **Health**-Endpunkte bereitstellt, die die Plattform überwacht.
 
 > Python-Anwendungen laufen auf Gluonify mit dem `python3` von Debian 13 (**CPython 3.13**) jedes Knotens: Bup installiert die gesperrten Abhängigkeiten in ein venv, signiert Code und venv in einem Archiv, und der Knoten führt es in derselben Sandbox aus wie native Anwendungen. Kein Dockerfile.
@@ -66,6 +66,7 @@ src/gluonify_source/
   notes/models.py           NewNote (validierter Body), Note
   notes/api.py              ← DAS MODELL EINER REST-RESSOURCE (zum Kopieren)
   notes/store.py            die Schnittstelle NoteStore; MemoryNoteStore, GraphNoteStore (gDown)
+  notes/gdown.py            WIE MAN gDOWN ERREICHT: der neo4j-Treiber in zehn Zeilen (nur TLS, CA der Plattform)
   notes/stores.py           wählt die Implementierung (SOURCE_STORE): der Ort für Ihre eigene
   platform.py               /api/platform und /api/auth-config
 tests/                      Charm durch einen P-256-Schlüssel und sein JWKS simuliert, gDown durch einen falschen neo4j-Treiber
@@ -88,9 +89,35 @@ Die API prüft von **Charm** ausgestellte Bearer-Token (JWT, ES256) mit `require
 
 ## 5. Speicherung: Speicher oder gDown
 
-`SOURCE_STORE=auto` (Standard) verwendet **gDown**, wenn die Plattform eine eigene Datenbank bereitstellt (`GLUONIFY_GDOWN_DATABASE`, aus `"gdownDatabase": true`), sonst den Speicher. `GraphNoteStore` führt vier parametrisierte Cypher-Anweisungen über `GdownClient` aus `gluonify-gdown` auf der eigenen Datenbank aus: über Bolt mit TLS, wenn die Plattform `GLUONIFY_GDOWN_BOLT_URL` injiziert (`bolt+s://`, CA `GLUONIFY_GDOWN_CA_FILE`), sonst über die HTTP-API von gDown (`POST /db/<base>/query`). `/api/platform` zeigt, welcher Weg genutzt wird (`gdownTransport`). Die Bereitschaft antwortet 503, solange gDown nicht antwortet; die Lebendigkeit hängt nie davon ab.
+`SOURCE_STORE=auto` (Standard) verwendet **gDown**, wenn die Plattform eine eigene Datenbank bereitstellt (`GLUONIFY_GDOWN_DATABASE`, aus `"gdownDatabase": true`), sonst den Speicher. `GraphNoteStore` führt vier parametrisierte Cypher-Anweisungen auf der eigenen Datenbank mit dem offiziellen **`neo4j`**-Treiber aus. Das SDK hat keinen gDown-Client: der Treiber genügt, und seine Installation (oder die von **`neomodel`**, einem OGM darauf, wenn Sie abgebildete Klassen bevorzugen) lässt Bup `?gdown` ableiten.
 
-> Derzeit injiziert die Plattform noch keine Bolt-Adresse (Bolt für Anwendungen, mit Pflicht-TLS, ist im Aufbau): die HTTP-API wird verwendet, und die Anwendung funktioniert so, wie sie ist. Eine `bolt://`-Adresse ohne TLS wird abgelehnt, außer mit `SOURCE_DEV=1` außerhalb der Plattform (ein lokales gDown).
+**Wie man gDown erreicht** ([`notes/gdown.py`](src/gluonify_source/notes/gdown.py), hier mit `os.environ` gezeigt): Bolt ist **nur mit TLS** möglich, und die Plattform injiziert `GLUONIFY_GDOWN_BOLT_URL` (`bolt+s://` oder `neo4j+s://`), `GLUONIFY_GDOWN_DATABASE`, `GLUONIFY_GDOWN_USER`, `GLUONIFY_GDOWN_PASSWORD` und `GLUONIFY_GDOWN_CA_FILE` (das PEM der CA).
+
+```python
+import os
+
+import neo4j  # pip install neo4j  (Bup then infers "?gdown")
+
+
+def gdown_driver(dev: bool = False) -> neo4j.Driver:
+    url = os.environ["GLUONIFY_GDOWN_BOLT_URL"]  # bolt+s://… or neo4j+s://…
+    scheme, rest = url.split("://", 1)
+    if not scheme.endswith("+s") and not dev:
+        raise RuntimeError("gDown: TLS required (bolt+s:// or neo4j+s://)")
+    auth = (os.environ["GLUONIFY_GDOWN_USER"], os.environ["GLUONIFY_GDOWN_PASSWORD"])
+    ca = os.environ.get("GLUONIFY_GDOWN_CA_FILE")
+    if ca and scheme.endswith("+s"):  # the driver refuses a custom CA with "+s": same TLS, explicit trust
+        return neo4j.GraphDatabase.driver(f"{scheme[:-2]}://{rest}", auth=auth, encrypted=True,
+                                          trusted_certificates=neo4j.TrustCustomCAs(ca))
+    return neo4j.GraphDatabase.driver(url, auth=auth)
+
+
+driver = gdown_driver()
+records, _, _ = driver.execute_query("MATCH (n:Note) RETURN n.title AS title",
+                                     database_=os.environ["GLUONIFY_GDOWN_DATABASE"])
+```
+
+Der Treiber lehnt eine eigene CA mit einem `+s`-Schema ab, daher `encrypted=True` mit `TrustCustomCAs`: weiterhin TLS, geprüft gegen die CA der Plattform. Eine `bolt://`-Adresse ohne TLS wird abgelehnt, außer mit `SOURCE_DEV=1` (ein lokales gDown), das die Plattform ablehnt.
 
 ## 6. Konfiguration
 
@@ -104,11 +131,11 @@ Die gesamte Konfiguration kommt aus der Umgebung (der Plattform oder dem Tresor 
 | `GLUONIFY_SOURCE_OIDC_ISSUER`, `GLUONIFY_SOURCE_OIDC_AUDIENCE`, `GLUONIFY_SOURCE_OIDC_CLIENT_ID` | Plattformwerte `GLUONIFY_OIDC_*` | haben Vorrang vor den Plattformwerten |
 | `GLUONIFY_SOURCE_CHARM_PUBLIC_URL` | `GLUONIFY_OIDC_PUBLIC_URL`, sonst aus dem Aussteller abgeleitet | öffentliche Adresse von Charm für den Browser |
 | `SOURCE_AUTH_SCOPE` | `openid` | Scope der Browser-Anmeldung |
-| `GLUONIFY_GDOWN_BOLT_URL`, `GLUONIFY_GDOWN_CA_FILE` | von der Plattform injiziert; fehlen sie: HTTP-API unter `GLUONIFY_SERVICE_GDOWN_URL` | Bolt-Adresse von gDown (`bolt+s://`) und die vertrauenswürdige CA |
+| `GLUONIFY_GDOWN_BOLT_URL`, `GLUONIFY_GDOWN_CA_FILE` | von der Plattform injiziert | Bolt-Adresse von gDown (`bolt+s://`, nur TLS) und die vertrauenswürdige CA |
 
 ## 7. Bauen und bereitstellen
 
-Bup erkennt ein Python-Projekt an seiner `pyproject.toml`, verlangt die Sperrdatei, analysiert den Code (SonarQube, Regeln für gefährliche Aufrufe, `pip-audit`), installiert `requirements.lock` mit `pip install --require-hashes` in ein venv und signiert Code und venv in einem gzip. **`uses` wird abgeleitet** aus den Markern `[gluonify.uses]` der in diesem venv installierten SDK-Distributionen (`gluonify` deklariert `charm`, `gluonify-gdown` deklariert `gdown`); `gluonify.json` enthält daher nur, was sich nicht ableiten lässt:
+Bup erkennt ein Python-Projekt an seiner `pyproject.toml`, verlangt die Sperrdatei, analysiert den Code (SonarQube, Regeln für gefährliche Aufrufe, `pip-audit`), installiert `requirements.lock` mit `pip install --require-hashes` in ein venv und signiert Code und venv in einem gzip. **`uses` wird abgeleitet** aus den Markern `[gluonify.uses]` der in diesem venv installierten SDK-Distributionen (`gluonify` deklariert `charm`; die Distribution `neo4j` lässt `gdown` ableiten); `gluonify.json` enthält daher nur, was sich nicht ableiten lässt:
 
 ```json
 {"gdownDatabase": true, "portEnv": "PORT", "health": "/q/health/ready"}
@@ -119,7 +146,7 @@ Nach einer Änderung der Abhängigkeiten: `uv lock && uv export --format require
 ## 8. Testen
 
 ```bash
-uv run pytest --cov          # 50 Tests
+uv run pytest --cov          # 57 Tests
 uv run ruff check . && uv run ruff format --check .
 ```
 
@@ -131,7 +158,7 @@ Charm wird durch ein P-256-Schlüsselpaar simuliert, dessen JWKS der Prüfer lie
 |---|---|
 | REST-API der Notizen, Rollen, Validierung, OpenAPI | ✅ |
 | Charm-Token, `/api/auth-config` | ✅ |
-| Gdown-Speicherung (HTTP-API in Java) | ✅ Bolt mit TLS, wenn injiziert, sonst HTTP-API |
+| Gdown-Speicherung (HTTP-API in Java) | ✅ mit dem `neo4j`-Treiber über Bolt mit TLS |
 | Speicher im Arbeitsspeicher, Health ready/live, `/api/platform` | ✅ |
 | Vue-Oberfläche (Quinoa) | ❌ nicht übertragen: eine gebaute Oberfläche mit `StaticFiles` ausliefern oder auf Field hosten |
 | Dateispeicherung (`/distributed/std`) | ❌ |

@@ -7,7 +7,7 @@ requires-python = ">=3.13"
 dependencies = [
     "gluonify==0.1.0",
     "gluonify-fastapi==0.1.0",
-    "gluonify-gdown==0.1.0",
+    "neo4j>=5.28",
     "fastapi>=0.115",
     "uvicorn>=0.34",
     "pydantic>=2.10",
@@ -16,12 +16,11 @@ dependencies = [
 [project.scripts]
 gluonify-source = "gluonify_source.main:run"
 
-# Until the SDK (gluonify, gluonify-fastapi, gluonify-gdown) is published on PyPI, it comes from the sibling checkout. Remove this table once `gluonify` is on PyPI
+# Until the SDK (gluonify, gluonify-fastapi) is published on PyPI, it comes from the sibling checkout. Remove this table once `gluonify` is on PyPI
 # (then `uv lock` pins it with its hashes like every other dependency).
 [tool.uv.sources]
 gluonify = { path = "../gluonify-plasma-python/packages/gluonify", editable = true }
 gluonify-fastapi = { path = "../gluonify-plasma-python/packages/gluonify-fastapi", editable = true }
-gluonify-gdown = { path = "../gluonify-plasma-python/packages/gluonify-gdown", editable = true }
 
 [dependency-groups]
 dev = ["pytest>=8.3", "pytest-cov>=6.0", "ruff>=0.11", "httpx>=0.28"]

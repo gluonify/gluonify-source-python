@@ -4,11 +4,11 @@
 
 > **Varianti Java.** Lo stesso servizio in Quarkus si trova in [`gluonify-source`](https://github.com/gluonify/gluonify-source) (Maven) e [`gluonify-source-gradle`](https://github.com/gluonify/gluonify-source-gradle) (Gradle). Questo ne è l'equivalente **Python**, per quanto si possa trasporre.
 
-**Il punto di partenza di un servizio Python su [Gluonify](https://gluonify.io).** Un servizio piccolo e completo (delle «note») costruito con **FastAPI** e **uvicorn** sopra l'SDK Python di Gluonify ([`gluonify-plasma-python`](https://github.com/gluonify/gluonify-plasma-python): distribuzioni `gluonify`, `gluonify-fastapi` e `gluonify-gdown`). Mostra, con codice funzionante e test, come:
+**Il punto di partenza di un servizio Python su [Gluonify](https://gluonify.io).** Un servizio piccolo e completo (delle «note») costruito con **FastAPI** e **uvicorn** sopra l'SDK Python di Gluonify ([`gluonify-plasma-python`](https://github.com/gluonify/gluonify-plasma-python): distribuzioni `gluonify` e `gluonify-fastapi`). Mostra, con codice funzionante e test, come:
 
 1. creare un **servizio REST** (validazione, ruoli, OpenAPI);
 2. **verificare i token di Charm** e i ruoli, e dare a un browser ciò che serve per accedere;
-3. tenere i dati in **gDown**, il database a grafo della piattaforma (database dedicato, driver ufficiale `neo4j` su Bolt con TLS, o l'API HTTP di gDown);
+3. tenere i dati in **gDown**, il database a grafo della piattaforma (database dedicato, driver ufficiale `neo4j` su Bolt con TLS);
 4. esporre gli endpoint di **salute** che la piattaforma sorveglia.
 
 > Le applicazioni Python girano su Gluonify con il `python3` di Debian 13 (**CPython 3.13**) di ogni nodo: Bup installa le dipendenze bloccate in un venv, firma codice e venv in un archivio, e il nodo lo esegue nella stessa sandbox delle applicazioni native. Nessun Dockerfile.
@@ -66,6 +66,7 @@ src/gluonify_source/
   notes/models.py           NewNote (corpo validato), Note
   notes/api.py              ← IL MODELLO DI UNA RISORSA REST (da copiare)
   notes/store.py            l'interfaccia NoteStore; MemoryNoteStore, GraphNoteStore (gDown)
+  notes/gdown.py            COME RAGGIUNGERE gDOWN: il driver neo4j in dieci righe (solo TLS, CA della piattaforma)
   notes/stores.py           sceglie l'implementazione (SOURCE_STORE): il punto dove collegare la vostra
   platform.py               /api/platform e /api/auth-config
 tests/                      Charm simulato da una chiave P-256 e il suo JWKS, gDown da un falso driver neo4j
@@ -88,9 +89,35 @@ L'API verifica i token bearer emessi da **Charm** (JWT, ES256) con `require_role
 
 ## 5. Archiviazione: memoria o gDown
 
-`SOURCE_STORE=auto` (predefinito) usa **gDown** quando la piattaforma fornisce un database dedicato (`GLUONIFY_GDOWN_DATABASE`, da `"gdownDatabase": true`), altrimenti la memoria. `GraphNoteStore` esegue quattro istruzioni Cypher parametrizzate tramite `GdownClient` di `gluonify-gdown`, sul database dedicato: su Bolt con TLS quando la piattaforma inietta `GLUONIFY_GDOWN_BOLT_URL` (`bolt+s://`, CA `GLUONIFY_GDOWN_CA_FILE`), altrimenti tramite l'API HTTP di gDown (`POST /db/<base>/query`). `/api/platform` dice quale (`gdownTransport`). La disponibilità risponde 503 finché gDown non risponde; la vita non ne dipende mai.
+`SOURCE_STORE=auto` (predefinito) usa **gDown** quando la piattaforma fornisce un database dedicato (`GLUONIFY_GDOWN_DATABASE`, da `"gdownDatabase": true`), altrimenti la memoria. `GraphNoteStore` esegue quattro istruzioni Cypher parametrizzate sul database dedicato con il driver ufficiale **`neo4j`**. Nell'SDK non c'è un client gDown: basta il driver, ed è la sua installazione (o quella di **`neomodel`**, un OGM sopra di esso, se preferite classi mappate) a far dedurre `?gdown` a Bup.
 
-> Oggi la piattaforma non inietta ancora un indirizzo Bolt (Bolt per le applicazioni, con TLS obbligatorio, è in costruzione): si usa l'API HTTP e l'applicazione funziona così com'è. Un indirizzo `bolt://` senza TLS è rifiutato, tranne con `SOURCE_DEV=1` fuori dalla piattaforma (un gDown locale).
+**Come raggiungere gDown** ([`notes/gdown.py`](src/gluonify_source/notes/gdown.py), mostrato qui con `os.environ`): Bolt è **solo TLS**, e la piattaforma inietta `GLUONIFY_GDOWN_BOLT_URL` (`bolt+s://` o `neo4j+s://`), `GLUONIFY_GDOWN_DATABASE`, `GLUONIFY_GDOWN_USER`, `GLUONIFY_GDOWN_PASSWORD` e `GLUONIFY_GDOWN_CA_FILE` (il PEM della CA).
+
+```python
+import os
+
+import neo4j  # pip install neo4j  (Bup then infers "?gdown")
+
+
+def gdown_driver(dev: bool = False) -> neo4j.Driver:
+    url = os.environ["GLUONIFY_GDOWN_BOLT_URL"]  # bolt+s://… or neo4j+s://…
+    scheme, rest = url.split("://", 1)
+    if not scheme.endswith("+s") and not dev:
+        raise RuntimeError("gDown: TLS required (bolt+s:// or neo4j+s://)")
+    auth = (os.environ["GLUONIFY_GDOWN_USER"], os.environ["GLUONIFY_GDOWN_PASSWORD"])
+    ca = os.environ.get("GLUONIFY_GDOWN_CA_FILE")
+    if ca and scheme.endswith("+s"):  # the driver refuses a custom CA with "+s": same TLS, explicit trust
+        return neo4j.GraphDatabase.driver(f"{scheme[:-2]}://{rest}", auth=auth, encrypted=True,
+                                          trusted_certificates=neo4j.TrustCustomCAs(ca))
+    return neo4j.GraphDatabase.driver(url, auth=auth)
+
+
+driver = gdown_driver()
+records, _, _ = driver.execute_query("MATCH (n:Note) RETURN n.title AS title",
+                                     database_=os.environ["GLUONIFY_GDOWN_DATABASE"])
+```
+
+Il driver rifiuta una CA personalizzata con uno schema `+s`, da cui `encrypted=True` con `TrustCustomCAs`: resta TLS, verificato con la CA della piattaforma. Un indirizzo `bolt://` senza TLS è rifiutato, tranne con `SOURCE_DEV=1` (un gDown locale), che la piattaforma rifiuta.
 
 ## 6. Configurazione
 
@@ -104,11 +131,11 @@ Tutta la configurazione viene dall'ambiente (la piattaforma, o la cassaforte Top
 | `GLUONIFY_SOURCE_OIDC_ISSUER`, `GLUONIFY_SOURCE_OIDC_AUDIENCE`, `GLUONIFY_SOURCE_OIDC_CLIENT_ID` | valori `GLUONIFY_OIDC_*` della piattaforma | prevalgono sui valori della piattaforma |
 | `GLUONIFY_SOURCE_CHARM_PUBLIC_URL` | `GLUONIFY_OIDC_PUBLIC_URL`, altrimenti dedotta dall'emittente | indirizzo pubblico di Charm per il browser |
 | `SOURCE_AUTH_SCOPE` | `openid` | ambito dell'accesso del browser |
-| `GLUONIFY_GDOWN_BOLT_URL`, `GLUONIFY_GDOWN_CA_FILE` | iniettate dalla piattaforma; assenti: API HTTP su `GLUONIFY_SERVICE_GDOWN_URL` | indirizzo Bolt di gDown (`bolt+s://`) e la CA di fiducia |
+| `GLUONIFY_GDOWN_BOLT_URL`, `GLUONIFY_GDOWN_CA_FILE` | iniettate dalla piattaforma | indirizzo Bolt di gDown (`bolt+s://`, solo TLS) e la CA di fiducia |
 
 ## 7. Costruire e distribuire
 
-Bup riconosce un progetto Python dal suo `pyproject.toml`, esige il file di blocco, analizza il codice (SonarQube, regole sulle chiamate pericolose, `pip-audit`), installa `requirements.lock` con `pip install --require-hashes` in un venv, e firma codice e venv in un gzip. **`uses` è dedotto** dai marcatori `[gluonify.uses]` delle distribuzioni dell'SDK installate in quel venv (`gluonify` dichiara `charm`, `gluonify-gdown` dichiara `gdown`); `gluonify.json` dice solo ciò che non si può dedurre:
+Bup riconosce un progetto Python dal suo `pyproject.toml`, esige il file di blocco, analizza il codice (SonarQube, regole sulle chiamate pericolose, `pip-audit`), installa `requirements.lock` con `pip install --require-hashes` in un venv, e firma codice e venv in un gzip. **`uses` è dedotto** dai marcatori `[gluonify.uses]` delle distribuzioni dell'SDK installate in quel venv (`gluonify` dichiara `charm`; la distribuzione `neo4j` fa dedurre `gdown`); `gluonify.json` dice solo ciò che non si può dedurre:
 
 ```json
 {"gdownDatabase": true, "portEnv": "PORT", "health": "/q/health/ready"}
@@ -119,7 +146,7 @@ Dopo aver cambiato una dipendenza: `uv lock && uv export --format requirements-t
 ## 8. Testare
 
 ```bash
-uv run pytest --cov          # 50 test
+uv run pytest --cov          # 57 test
 uv run ruff check . && uv run ruff format --check .
 ```
 
@@ -131,7 +158,7 @@ Charm è simulato da una coppia di chiavi P-256 il cui JWKS è letto dal verific
 |---|---|
 | API REST delle note, ruoli, validazione, OpenAPI | ✅ |
 | Token di Charm, `/api/auth-config` | ✅ |
-| Archiviazione Gdown (API HTTP in Java) | ✅ Bolt con TLS quando iniettato, altrimenti API HTTP |
+| Archiviazione Gdown (API HTTP in Java) | ✅ con il driver `neo4j` su Bolt con TLS |
 | Archiviazione in memoria, salute ready/live, `/api/platform` | ✅ |
 | Interfaccia Vue (Quinoa) | ❌ non trasposta: servire un'interfaccia costruita con `StaticFiles`, o ospitarla su Field |
 | Archiviazione su file (`/distributed/std`) | ❌ |

@@ -7,11 +7,15 @@ import uuid
 from datetime import UTC, datetime
 from typing import Any, Protocol
 
-from gluonify_gdown import GdownClient
-
 from .models import NewNote, Note
 
 LIMIT = 200
+
+
+class Driver(Protocol):
+    """What GraphNoteStore uses of ``neo4j.Driver`` (faked in tests)."""
+
+    def execute_query(self, query: str, parameters: dict[str, Any] | None = ..., /, **kwargs: Any) -> Any: ...
 
 
 class NoteStore(Protocol):
@@ -60,45 +64,51 @@ class MemoryNoteStore:
 
 
 class GraphNoteStore:
-    """Notes in gDown (dedicated database) through gluonify-gdown: Bolt with TLS, or gDown's HTTP API."""
+    """Notes in gDown, the platform's graph database (dedicated database), with the official neo4j driver."""
 
-    def __init__(self, client: GdownClient) -> None:
-        self.client = client
+    def __init__(self, driver: Driver, database: str) -> None:
+        self.driver = driver
+        self.database = database
+
+    def _run(self, statement: str, parameters: dict[str, Any]) -> Any:
+        return self.driver.execute_query(statement, parameters, database_=self.database)
 
     def kind(self) -> str:
         return "gdown"
 
     def create(self, new: NewNote, author: str) -> Note:
         n = _new(new, author)
-        self.client.write(
+        self._run(
             "CREATE (:Note {id: $id, title: $title, body: $body, createdAt: $createdAt, author: $author})",
             {"id": n.id, "title": n.title, "body": n.body, "createdAt": n.createdAt.isoformat(), "author": n.author},
         )
         return n
 
     def list(self) -> list[Note]:
-        return [
-            self._note(r)
-            for r in self.client.query(
-                "MATCH (n:Note) RETURN n.id AS id, n.title AS title, n.body AS body, n.createdAt AS createdAt, "
-                "n.author AS author ORDER BY n.createdAt DESC LIMIT $limit",
-                {"limit": LIMIT},
-            )
-        ]
+        r = self._run(
+            "MATCH (n:Note) RETURN n.id AS id, n.title AS title, n.body AS body, n.createdAt AS createdAt, "
+            "n.author AS author ORDER BY n.createdAt DESC LIMIT $limit",
+            {"limit": LIMIT},
+        )
+        return [self._note(dict(rec)) for rec in r.records]
 
     def get(self, note_id: str) -> Note | None:
-        rows = self.client.query(
+        r = self._run(
             "MATCH (n:Note {id: $id}) RETURN n.id AS id, n.title AS title, n.body AS body, n.createdAt AS createdAt, "
             "n.author AS author",
             {"id": note_id},
         )
-        return self._note(rows[0]) if rows else None
+        return self._note(dict(r.records[0])) if r.records else None
 
     def delete(self, note_id: str) -> bool:
-        return self.client.write("MATCH (n:Note {id: $id}) DELETE n", {"id": note_id})["nodes_deleted"] > 0
+        return int(self._run("MATCH (n:Note {id: $id}) DELETE n", {"id": note_id}).summary.counters.nodes_deleted) > 0
 
     def ready(self) -> bool:
-        return self.client.ready()
+        try:
+            self._run("RETURN 1 AS ok", {})
+        except Exception:
+            return False
+        return True
 
     @staticmethod
     def _note(r: dict[str, Any]) -> Note:

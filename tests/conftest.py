@@ -6,15 +6,17 @@ import json
 import time
 from collections.abc import Mapping
 from typing import Any
+from unittest.mock import patch
 
 import jwt
+import neo4j
 import pytest
 from cryptography.hazmat.primitives.asymmetric import ec
 from fastapi.testclient import TestClient
 from gluonify import CharmVerifier, GluonifyServices
-from gluonify_gdown import BoltTransport, GdownClient
 
 from gluonify_source.main import build
+from gluonify_source.notes.gdown import gdown_driver
 
 ISS = "https://id.gluonify.lan/realms/gluonify"
 
@@ -56,6 +58,12 @@ class FakeGdown:
         self.nodes: list[dict[str, Any]] = []
         self.calls: list[tuple[str, dict[str, Any], str | None]] = []
         self.down = False
+        self.url: str | None = None
+        self.options: dict[str, Any] = {}
+
+    def opened(self, url: str, options: dict[str, Any]) -> FakeGdown:
+        self.url, self.options = url, options
+        return self
 
     def execute_query(self, query: str, parameters: Mapping[str, Any] | None = None, /, **kw: Any) -> Any:
         if self.down:
@@ -119,10 +127,9 @@ PLATFORM = {
 
 
 def client(env: Mapping[str, str], charm: FakeCharm, gdown: FakeGdown | None = None) -> TestClient:
-    def fake_gdown(s: GluonifyServices) -> GdownClient:
-        real = GdownClient.from_env(s)  # exercises the real resolution of the SDK (Bolt with TLS here)
-        t = real.transport
-        assert isinstance(t, BoltTransport)
-        return GdownClient(BoltTransport(t.url, t.database, ("u", "p"), factory=lambda *_: gdown))  # type: ignore[arg-type,return-value]
+    def fake_gdown(s: GluonifyServices) -> Any:
+        # the real gdown_driver of the app, with the neo4j driver constructor replaced by the fake
+        with patch.object(neo4j.GraphDatabase, "driver", lambda url, **kw: gdown.opened(url, kw)):
+            return gdown_driver(s.environ)
 
     return TestClient(build(GluonifyServices(dict(env)), verifier=charm.verifier, gdown=fake_gdown))
