@@ -32,7 +32,8 @@ def test_no_sensitive_files() -> None:
 def test_depends_on_the_sdk_and_the_neo4j_driver() -> None:
     deps = tomllib.loads((ROOT / "pyproject.toml").read_text())["project"]["dependencies"]
     names = {d.split("=")[0].split(">")[0] for d in deps}
-    assert {"gluonify", "gluonify-fastapi", "neo4j"} <= names
+    assert {"gluonify[fastapi]", "neo4j"} <= names  # the FastAPI integration is the extra of gluonify, not a distribution
+    assert not any(n.startswith("gluonify-") for n in names)
 
 
 def test_no_dockerfile() -> None:
@@ -52,6 +53,6 @@ def test_uses_inferred_plus_declared_equal_the_appspec() -> None:
 
 
 def test_listens_on_all_interfaces() -> None:
-    from gluonify_fastapi import app as sdk_app
+    from gluonify.fastapi import app as sdk_app
 
     assert '"0.0.0.0"' in Path(sdk_app.__file__).read_text()

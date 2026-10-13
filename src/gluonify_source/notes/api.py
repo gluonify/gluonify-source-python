@@ -11,7 +11,7 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from gluonify import Principal
-from gluonify_fastapi import require_roles
+from gluonify.fastapi import require_roles
 
 from ..config import READ, WRITE
 from .models import NewNote, Note

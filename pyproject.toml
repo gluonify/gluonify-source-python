@@ -5,8 +5,7 @@ description = "Starting point for a Python (FastAPI) service on Gluonify: notes,
 readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
-    "gluonify==0.1.0",
-    "gluonify-fastapi==0.1.0",
+    "gluonify[fastapi]==0.1.0",
     "neo4j>=5.28",
     "fastapi>=0.115",
     "uvicorn>=0.34",
@@ -16,11 +15,10 @@ dependencies = [
 [project.scripts]
 gluonify-source = "gluonify_source.main:run"
 
-# Until the SDK (gluonify, gluonify-fastapi) is published on PyPI, it comes from the sibling checkout. Remove this table once `gluonify` is on PyPI
+# Until the SDK (gluonify, with its extra fastapi) is published on PyPI, it comes from the sibling checkout. Remove this table once `gluonify` is on PyPI
 # (then `uv lock` pins it with its hashes like every other dependency).
 [tool.uv.sources]
 gluonify = { path = "../gluonify-plasma-python/packages/gluonify", editable = true }
-gluonify-fastapi = { path = "../gluonify-plasma-python/packages/gluonify-fastapi", editable = true }
 
 [dependency-groups]
 dev = ["pytest>=8.3", "pytest-cov>=6.0", "ruff>=0.11", "httpx>=0.28"]

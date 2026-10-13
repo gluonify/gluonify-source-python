@@ -8,7 +8,7 @@ Shared context for every gluonify-* repository: `/Users/a/dev/gluonify/CLAUDE.md
 - `uv sync`, then `SOURCE_DEV=1 uv run gluonify-source` (http://localhost:8080, development identity with all roles, notes in memory).
 - `uv run pytest --cov` (57 tests, coverage gate 90 %), `uv run ruff check . && uv run ruff format --check .`.
 - After any dependency change: `uv lock` then `uv export --format requirements-txt --no-dev --no-emit-project -o requirements.lock` (Bup installs that file with `pip install --require-hashes`); commit both.
-- The SDK (`gluonify`, `gluonify-fastapi`) comes from `../gluonify-plasma-python` (path sources in `pyproject.toml`) until it is on PyPI; then remove `[tool.uv.sources]` and lock again.
+- The SDK (`gluonify[fastapi]`: the distribution `gluonify` with its extra `fastapi`) comes from `../gluonify-plasma-python` (path sources in `pyproject.toml`) until it is on PyPI; then remove `[tool.uv.sources]` and lock again.
 
 ## Platform rules
 - Python 3.13 (CPython of Debian 13 on the nodes). No Dockerfile. A lock file with hashes is mandatory. No `.env`, `*.pem`, `*.p12`, `*.jks`. Listen on `0.0.0.0:$PORT`, one process. Health `/q/health/ready` and `/q/health/live` (liveness depends on nothing external). `tests/test_conformity.py` checks these.

@@ -9,7 +9,7 @@ from collections.abc import Callable
 
 from fastapi import FastAPI
 from gluonify import CharmVerifier, GluonifyServices, Principal
-from gluonify_fastapi import GluonifyAuth, create_app, serve
+from gluonify.fastapi import GluonifyAuth, create_app, serve
 
 from . import __version__, platform
 from .config import READ, WRITE, SourceConfig

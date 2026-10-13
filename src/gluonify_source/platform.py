@@ -6,7 +6,7 @@ from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends, Request
 from gluonify import GluonifyServices, Principal
-from gluonify_fastapi import require_roles
+from gluonify.fastapi import require_roles
 from pydantic import BaseModel
 
 from .config import READ, SourceConfig

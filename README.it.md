@@ -4,7 +4,7 @@
 
 > **Varianti Java.** Lo stesso servizio in Quarkus si trova in [`gluonify-source`](https://github.com/gluonify/gluonify-source) (Maven) e [`gluonify-source-gradle`](https://github.com/gluonify/gluonify-source-gradle) (Gradle). Questo ne è l'equivalente **Python**, per quanto si possa trasporre.
 
-**Il punto di partenza di un servizio Python su [Gluonify](https://gluonify.io).** Un servizio piccolo e completo (delle «note») costruito con **FastAPI** e **uvicorn** sopra l'SDK Python di Gluonify ([`gluonify-plasma-python`](https://github.com/gluonify/gluonify-plasma-python): distribuzioni `gluonify` e `gluonify-fastapi`). Mostra, con codice funzionante e test, come:
+**Il punto di partenza di un servizio Python su [Gluonify](https://gluonify.io).** Un servizio piccolo e completo (delle «note») costruito con **FastAPI** e **uvicorn** sopra l'SDK Python di Gluonify ([`gluonify-plasma-python`](https://github.com/gluonify/gluonify-plasma-python): distribuzione `gluonify` con il suo extra `fastapi`, `pip install "gluonify[fastapi]"`). Mostra, con codice funzionante e test, come:
 
 1. creare un **servizio REST** (validazione, ruoli, OpenAPI);
 2. **verificare i token di Charm** e i ruoli, e dare a un browser ciò che serve per accedere;
@@ -85,7 +85,7 @@ L'archiviazione sta dietro [`NoteStore`](src/gluonify_source/notes/store.py): im
 
 ## 4. Autenticazione: i token di Charm
 
-L'API verifica i token bearer emessi da **Charm** (JWT, ES256) con `require_roles` di `gluonify-fastapi`: niente da configurare sulla piattaforma. L'SDK legge le chiavi di Charm da `GLUONIFY_SERVICE_CHARM_URL`, controlla l'emittente `GLUONIFY_OIDC_ISSUER` e l'audience `GLUONIFY_OIDC_AUDIENCE` (`gluonify-source` per impostazione predefinita), e legge i ruoli dal claim `roles` (`source:read`, `source:write`). Un'interfaccia web accede presso Charm stesso (codice di autorizzazione + PKCE, il kit `@gluonify/ui`) grazie a `GET /api/auth-config`; la password non viene mai digitata in questa applicazione.
+L'API verifica i token bearer emessi da **Charm** (JWT, ES256) con `require_roles` di `gluonify.fastapi`: niente da configurare sulla piattaforma. L'SDK legge le chiavi di Charm da `GLUONIFY_SERVICE_CHARM_URL`, controlla l'emittente `GLUONIFY_OIDC_ISSUER` e l'audience `GLUONIFY_OIDC_AUDIENCE` (`gluonify-source` per impostazione predefinita), e legge i ruoli dal claim `roles` (`source:read`, `source:write`). Un'interfaccia web accede presso Charm stesso (codice di autorizzazione + PKCE, il kit `@gluonify/ui`) grazie a `GET /api/auth-config`; la password non viene mai digitata in questa applicazione.
 
 ## 5. Archiviazione: memoria o gDown
 
