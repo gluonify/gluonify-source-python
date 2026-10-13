@@ -1,0 +1,17 @@
+{
+  "artifacts": { "x86_64": "https://YOUR-REPO/gluonify-source-python.tar.gz#sha256=SHA256-DIGEST" },
+  "replicas": 2,
+  "memoryMb": 128,
+  "port": 8080,
+  "portEnv": "PORT",
+  "health": "/q/health/ready",
+  "uses": ["charm", "gdown"],
+  "gdownDatabase": true,
+  "env": {
+    "SOURCE_STORE": "gdown",
+    "GLUONIFY_SOURCE_OIDC_ISSUER": "https://id.YOUR-ZONE/realms/gluonify",
+    "GLUONIFY_SOURCE_OIDC_AUDIENCE": "gluonify-source",
+    "GLUONIFY_SOURCE_OIDC_CLIENT_ID": "source-ui"
+  },
+  "top": true
+}
