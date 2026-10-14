@@ -42,7 +42,7 @@ SOURCE_DEV=1 uv run gluonify-source
 | Address | Content |
 |---|---|
 | `/api/notes` | the REST API (JSON) |
-| `/api/platform` | what the platform provided (environment, granted services, storage) |
+| `/api/platform` | what the platform provided (environment, granted services, storage) and the Top key `GREETING` (`greeting`, read with `Top.get`) |
 | `/api/auth-config` | public sign-in configuration for a browser UI (Charm client id and endpoints) |
 | `/q/swagger-ui` · `/q/openapi` | interactive documentation and the OpenAPI contract |
 | `/q/health/ready` · `/q/health/live` | readiness (the storage answers) and liveness |
@@ -164,4 +164,5 @@ Charm is faked by a P-256 key pair whose JWKS the verifier reads; gDown by a fak
 | Files store (`/distributed/std`) | ❌ |
 | Photon webhooks (`/hooks`), documents with Crystallon | ❌ (no Python client in the SDK yet) |
 | Native executable | not applicable: CPython of the node |
+| e2e on a real cluster (`e2e-source.sh`) | ✅ `gluonify-chamber/scripts/e2e-source-python.sh` (29/29 on 2026-10-14, arm64): health, Charm tokens, Top, gDown over Bolt+TLS, `uses` inferred by Bup, sleep and wake; SDK installed from the local checkout until it is on PyPI |
 | `scripts/rename.py` | ❌: rename `gluonify_source`, the project name and `AUDIENCE` in `config.py` by hand |

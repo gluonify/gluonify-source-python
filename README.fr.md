@@ -42,7 +42,7 @@ SOURCE_DEV=1 uv run gluonify-source
 | Adresse | Contenu |
 |---|---|
 | `/api/notes` | l'API REST (JSON) |
-| `/api/platform` | ce que la plateforme a fourni (environnement, services accordés, stockage) |
+| `/api/platform` | ce que la plateforme a fourni (environnement, services accordés, stockage) et la clé Top `GREETING` (`greeting`, lue par `Top.get`) |
 | `/api/auth-config` | configuration publique de connexion pour une interface web (client et adresses de Charm) |
 | `/q/swagger-ui` · `/q/openapi` | documentation interactive et contrat OpenAPI |
 | `/q/health/ready` · `/q/health/live` | disponibilité (le stockage répond) et vie |
