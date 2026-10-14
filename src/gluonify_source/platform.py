@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends, Request
-from gluonify import GluonifyServices, Principal
+from gluonify import GluonifyServices, Principal, Top
 from gluonify.fastapi import require_roles
 from pydantic import BaseModel
 
@@ -24,6 +24,8 @@ def info(request: Request, _: Annotated[Principal, Depends(require_roles(READ))]
         "services": s.granted(),
         "store": request.app.state.notes.kind(),
         "storeReady": request.app.state.notes.ready(),
+        # a non-secret configuration key kept in Top (vault key GREETING, injected as APP_GREETING with "top": true)
+        "greeting": Top(s.environ).get("GREETING", "") or "",
     }
 
 

@@ -21,8 +21,15 @@ def test_platform_info(charm: FakeCharm, gdown: FakeGdown) -> None:
         "services": {"charm": "http://charm:8080", "gdown": "http://gdown:8080"},
         "store": "gdown",
         "storeReady": True,
+        "greeting": "",
     }
     assert "pw" not in str(body)
+
+
+def test_platform_info_reads_top(charm: FakeCharm, gdown: FakeGdown) -> None:
+    env = {**PLATFORM, "APP_GREETING": "hello from Top", "GREETING": "ignored"}
+    body = client(env, charm, gdown).get("/api/platform", headers=charm.bearer("source:read")).json()
+    assert body["greeting"] == "hello from Top"  # the APP_ prefix ("top": true) wins over the bare name
 
 
 def test_platform_info_needs_a_role(charm: FakeCharm) -> None:
