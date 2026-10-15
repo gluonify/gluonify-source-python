@@ -154,6 +154,16 @@ def test_gdown_without_database_fails_at_start() -> None:
 
 
 def test_openapi(charm: FakeCharm) -> None:
-    doc = client({}, charm).get("/q/openapi").json()
+    doc = client({}, charm).get("/openapi.json").json()
     assert doc["info"]["title"] == "gluonify-source"
     assert "/api/notes" in doc["paths"]
+
+
+def test_swagger_ui_at_docs_interactive_locally_read_only_on_the_platform(charm: FakeCharm, gdown: FakeGdown) -> None:
+    local = client({}, charm)
+    assert local.get("/docs").status_code == 200
+    assert "read-only" not in local.get("/docs").text
+    assert local.get("/q/openapi").status_code == 404
+    page = client(PLATFORM, charm, gdown).get("/docs")
+    assert page.status_code == 200
+    assert "Swagger UI is read-only in production" in page.text

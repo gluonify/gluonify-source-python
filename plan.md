@@ -4,3 +4,4 @@
 2. Done 2026-10-14: e2e on a real cluster (python.md V3-4), `gluonify-chamber/scripts/e2e-source-python.sh`, 29/29 in arm64 (Bolt+TLS path included). Left: run it on quark (x86_64), and through the real Bup build once item 1 is done.
 3. Port the remaining parts of gluonify-source: Photon webhooks with an idempotent ledger, the files store (`/distributed/std`), documents with Crystallon (needs a Python client), the Vue UI (multilingual en/fr/es/it/de, served by `StaticFiles` or Field), `scripts/rename.py`.
 4. Sites (gluonify-codex/sites): a page for the Python starter (V3-5).
+5. Done 2026-10-15: Swagger UI at `/docs` and OpenAPI at `/openapi.json` (SDK `create_app`; `/q/` belongs to Quarkus), read-only on the platform, blocked by the Higgs ingress in PRD. Left: replay `e2e-source-python.sh`.

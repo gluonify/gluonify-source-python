@@ -2,7 +2,7 @@
 
 * ``APIRouter`` with a prefix: the address; JSON in and out (pydantic models);
 * ``require_roles``: the roles of the Charm token (``roles`` claim); read = ``source:read``, write = ``source:write``;
-* the pydantic body is validated, 400 otherwise; ``summary`` and ``tags`` document it in ``/q/swagger-ui``.
+* the pydantic body is validated, 400 otherwise; ``summary`` and ``tags`` document it in ``/docs``.
 """
 
 from __future__ import annotations

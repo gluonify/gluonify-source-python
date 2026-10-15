@@ -44,7 +44,7 @@ SOURCE_DEV=1 uv run gluonify-source
 | `/api/notes` | l'API REST (JSON) |
 | `/api/platform` | ce que la plateforme a fourni (environnement, services accordés, stockage) et la clé Top `GREETING` (`greeting`, lue par `Top.get`) |
 | `/api/auth-config` | configuration publique de connexion pour une interface web (client et adresses de Charm) |
-| `/q/swagger-ui` · `/q/openapi` | documentation interactive et contrat OpenAPI |
+| `/docs` · `/openapi.json` | Swagger UI et contrat OpenAPI (interactif en local, en lecture seule sur la plateforme : ni Authorize, ni Try it out ; bloqués sur les routes publiques en PRD, comme `/q/` pour Quarkus) |
 | `/health/ready` · `/health/live` | disponibilité (le stockage répond) et vie |
 
 ```bash

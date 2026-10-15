@@ -44,7 +44,7 @@ SOURCE_DEV=1 uv run gluonify-source
 | `/api/notes` | die REST-API (JSON) |
 | `/api/platform` | was die Plattform bereitgestellt hat (Umgebung, gewährte Dienste, Speicherung) und den Top-Schlüssel `GREETING` (`greeting`, gelesen mit `Top.get`) |
 | `/api/auth-config` | öffentliche Anmeldekonfiguration für eine Weboberfläche (Client und Adressen von Charm) |
-| `/q/swagger-ui` · `/q/openapi` | interaktive Dokumentation und OpenAPI-Vertrag |
+| `/docs` · `/openapi.json` | Swagger UI und OpenAPI-Vertrag (lokal interaktiv, auf der Plattform schreibgeschützt: kein Authorize, kein Try it out; in PRD auf öffentlichen Routen gesperrt, wie `/q/` bei Quarkus) |
 | `/health/ready` · `/health/live` | Bereitschaft (die Speicherung antwortet) und Lebendigkeit |
 
 ```bash
