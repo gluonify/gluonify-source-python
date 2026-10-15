@@ -45,7 +45,7 @@ SOURCE_DEV=1 uv run gluonify-source
 | `/api/platform` | ciò che la piattaforma ha fornito (ambiente, servizi concessi, archiviazione) e la chiave Top `GREETING` (`greeting`, letta con `Top.get`) |
 | `/api/auth-config` | configurazione pubblica di accesso per un'interfaccia web (client e indirizzi di Charm) |
 | `/q/swagger-ui` · `/q/openapi` | documentazione interattiva e contratto OpenAPI |
-| `/q/health/ready` · `/q/health/live` | disponibilità (l'archiviazione risponde) e vita |
+| `/health/ready` · `/health/live` | disponibilità (l'archiviazione risponde) e vita |
 
 ```bash
 curl -s localhost:8080/api/notes -H 'Content-Type: application/json' -d '{"title":"Spesa","body":"pane"}'
@@ -138,7 +138,7 @@ Tutta la configurazione viene dall'ambiente (la piattaforma, o la cassaforte Top
 Bup riconosce un progetto Python dal suo `pyproject.toml`, esige il file di blocco, analizza il codice (SonarQube, regole sulle chiamate pericolose, `pip-audit`), installa `requirements.lock` con `pip install --require-hashes` in un venv, e firma codice e venv in un gzip. **`uses` è dedotto** dai marcatori `[gluonify.uses]` delle distribuzioni dell'SDK installate in quel venv (`gluonify` dichiara `charm`; la distribuzione `neo4j` fa dedurre `gdown`); `gluonify.json` dice solo ciò che non si può dedurre:
 
 ```json
-{"gdownDatabase": true, "portEnv": "PORT", "health": "/q/health/ready"}
+{"gdownDatabase": true, "portEnv": "PORT", "health": "/health/ready"}
 ```
 
 Dopo aver cambiato una dipendenza: `uv lock && uv export --format requirements-txt --no-dev --no-emit-project -o requirements.lock`. (Il framework Python di Bup è la fase V3-2 della specifica: non ancora disponibile.)

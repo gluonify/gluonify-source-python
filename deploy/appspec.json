@@ -4,11 +4,13 @@
   "memoryMb": 128,
   "port": 8080,
   "portEnv": "PORT",
-  "health": "/q/health/ready",
+  "health": "/health/ready",
   "uses": ["charm", "gdown"],
   "gdownDatabase": true,
   "env": {
     "SOURCE_STORE": "gdown",
+    "GLUONIFY_HEALTH_PATH": "/health/ready",
+    "GLUONIFY_LIVE_PATH": "/health/live",
     "GLUONIFY_SOURCE_OIDC_ISSUER": "https://id.YOUR-ZONE/realms/gluonify",
     "GLUONIFY_SOURCE_OIDC_AUDIENCE": "gluonify-source",
     "GLUONIFY_SOURCE_OIDC_CLIENT_ID": "source-ui"

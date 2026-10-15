@@ -38,14 +38,15 @@ def test_platform_info_needs_a_role(charm: FakeCharm) -> None:
 
 def test_health(charm: FakeCharm, gdown: FakeGdown) -> None:
     c = client(PLATFORM, charm, gdown)
-    assert c.get("/q/health/live").status_code == 200
-    r = c.get("/q/health/ready")
+    assert c.get("/health/live").status_code == 200
+    r = c.get("/health/ready")
     assert r.status_code == 200
     assert r.json()["checks"] == [{"name": "notes storage", "status": "UP", "data": {"store": "gdown"}}]
     gdown.down = True
-    r = c.get("/q/health/ready")
+    r = c.get("/health/ready")
     assert r.status_code == 503
-    assert c.get("/q/health/live").status_code == 200  # a gDown outage must not restart the app
+    assert c.get("/q/health/ready").status_code == 404  # /q/ is the Quarkus namespace
+    assert c.get("/health/live").status_code == 200  # a gDown outage must not restart the app
 
 
 def test_auth_config_on_the_platform(charm: FakeCharm, gdown: FakeGdown) -> None:

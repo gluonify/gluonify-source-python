@@ -11,7 +11,7 @@ Shared context for every gluonify-* repository: `/Users/a/dev/gluonify/CLAUDE.md
 - The SDK (`gluonify[fastapi]`: the distribution `gluonify` with its extra `fastapi`) comes from `../gluonify-plasma-python` (path sources in `pyproject.toml`) until it is on PyPI; then remove `[tool.uv.sources]` and lock again.
 
 ## Platform rules
-- Python 3.13 (CPython of Debian 13 on the nodes). No Dockerfile. A lock file with hashes is mandatory. No `.env`, `*.pem`, `*.p12`, `*.jks`. Listen on `0.0.0.0:$PORT`, one process. Health `/q/health/ready` and `/q/health/live` (liveness depends on nothing external). `tests/test_conformity.py` checks these.
+- Python 3.13 (CPython of Debian 13 on the nodes). No Dockerfile. A lock file with hashes is mandatory. No `.env`, `*.pem`, `*.p12`, `*.jks`. Listen on `0.0.0.0:$PORT`, one process. Health `/health/ready` and `/health/live` (never `/q/`, the Quarkus namespace) (liveness depends on nothing external). `tests/test_conformity.py` checks these.
 - **All configuration comes from the environment** (platform or Top). Never hard-code an address, a port or a password. Charm and gDown need NO configuration: the SDK finds them.
 - `SOURCE_DEV` is for local development only; `create_app` refuses it on the platform. Do not weaken that.
 - **`uses` is inferred by Bup** from the `[gluonify.uses]` markers of the installed SDK distributions (`gluonify` -> `charm`; the `neo4j` distribution -> `gdown`): `gluonify.json` declares only what cannot be inferred (`gdownDatabase`, `portEnv`, `health`). Declared plus inferred must equal the `uses` of `deploy/appspec.json` (checked by a test).

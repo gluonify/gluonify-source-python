@@ -1,1 +1,1 @@
-{"gdownDatabase": true, "portEnv": "PORT", "health": "/q/health/ready"}
+{"gdownDatabase": true, "portEnv": "PORT", "health": "/health/ready"}
