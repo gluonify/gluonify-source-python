@@ -166,3 +166,11 @@ Charm is faked by a P-256 key pair whose JWKS the verifier reads; gDown by a fak
 | Native executable | not applicable: CPython of the node |
 | e2e on a real cluster (`e2e-source.sh`) | ✅ `gluonify-chamber/scripts/e2e-source-python.sh` (29/29 on 2026-10-14, arm64): health, Charm tokens, Top, gDown over Bolt+TLS, `uses` inferred by Bup, sleep and wake; SDK installed from the local checkout until it is on PyPI |
 | `scripts/rename.py` | ❌: rename `gluonify_source`, the project name and `AUDIENCE` in `config.py` by hand |
+
+## License
+
+Copyright (c) 2026 David Cabillic.
+
+This repository is released under the [Apache License, Version 2.0](LICENSE). You may use, modify and
+redistribute it, including commercially, under the terms of that license; it is provided "as is",
+without warranty. Third-party components remain under their own licenses (see `NOTICE` where present).

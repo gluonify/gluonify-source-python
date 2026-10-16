@@ -165,3 +165,11 @@ Charm se simula con un par de claves P-256 cuyo JWKS lee el verificador; gDown c
 | Webhooks de Photon (`/hooks`), documentos con Crystallon | ❌ (aún sin cliente Python en el SDK) |
 | Ejecutable nativo | no aplica: CPython del nodo |
 | `scripts/rename.py` | ❌: renombrar a mano `gluonify_source`, el nombre del proyecto y `AUDIENCE` de `config.py` |
+
+## Licencia
+
+Copyright (c) 2026 David Cabillic.
+
+Este repositorio se publica bajo la [licencia Apache, versión 2.0](LICENSE). Puede usarlo, modificarlo y
+redistribuirlo, incluso con fines comerciales, en las condiciones de esa licencia; se entrega «tal cual»,
+sin garantía. Los componentes de terceros conservan sus propias licencias (véase `NOTICE` si existe).

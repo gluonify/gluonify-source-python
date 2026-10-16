@@ -4,6 +4,7 @@ version = "0.1.0"
 description = "Starting point for a Python (FastAPI) service on Gluonify: notes, Charm sign-in and roles, gDown, health"
 readme = "README.md"
 requires-python = ">=3.13"
+license = "Apache-2.0"
 dependencies = [
     "gluonify[fastapi]==0.1.0",
     "neo4j>=5.28",
