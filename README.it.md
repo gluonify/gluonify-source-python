@@ -168,7 +168,7 @@ Charm è simulato da una coppia di chiavi P-256 il cui JWKS è letto dal verific
 
 ## Licenza
 
-Copyright (c) 2026 David Cabillic.
+Copyright (c) 2026 Gluonify.
 
 Questo repository è pubblicato sotto la [licenza Apache, versione 2.0](LICENSE). Potete usarlo, modificarlo e
 ridistribuirlo, anche a fini commerciali, alle condizioni di tale licenza; è fornito «così com'è», senza

@@ -168,7 +168,7 @@ Charm se simula con un par de claves P-256 cuyo JWKS lee el verificador; gDown c
 
 ## Licencia
 
-Copyright (c) 2026 David Cabillic.
+Copyright (c) 2026 Gluonify.
 
 Este repositorio se publica bajo la [licencia Apache, versión 2.0](LICENSE). Puede usarlo, modificarlo y
 redistribuirlo, incluso con fines comerciales, en las condiciones de esa licencia; se entrega «tal cual»,

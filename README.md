@@ -169,7 +169,7 @@ Charm is faked by a P-256 key pair whose JWKS the verifier reads; gDown by a fak
 
 ## License
 
-Copyright (c) 2026 David Cabillic.
+Copyright (c) 2026 Gluonify.
 
 This repository is released under the [Apache License, Version 2.0](LICENSE). You may use, modify and
 redistribute it, including commercially, under the terms of that license; it is provided "as is",
