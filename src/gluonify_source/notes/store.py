@@ -49,8 +49,8 @@ class MemoryNoteStore:
 
     def list(self) -> list[Note]:
         with self._lock:
-            notes = list(self._notes.values())
-        return sorted(notes, key=lambda n: n.createdAt, reverse=True)[:LIMIT]
+            notes = sorted(self._notes.values(), key=lambda n: n.createdAt, reverse=True)
+        return notes[:LIMIT]
 
     def get(self, note_id: str) -> Note | None:
         return self._notes.get(note_id)

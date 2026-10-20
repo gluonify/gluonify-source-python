@@ -36,7 +36,7 @@ def list_notes(_: Reader, notes: Store) -> list[Note]:
     return notes.list()
 
 
-@router.get("/{note_id}", summary="One note")
+@router.get("/{note_id}", summary="One note", responses={404: {"description": "unknown note"}})
 def get_note(note_id: str, _: Reader, notes: Store) -> Note:
     n = notes.get(note_id)
     if n is None:
@@ -51,7 +51,7 @@ def create_note(new: NewNote, p: Writer, notes: Store, request: Request, respons
     return n
 
 
-@router.delete("/{note_id}", status_code=204, summary="Deletes a note")
+@router.delete("/{note_id}", status_code=204, summary="Deletes a note", responses={404: {"description": "unknown note"}})
 def delete_note(note_id: str, _: Writer, notes: Store) -> Response:
     if not notes.delete(note_id):
         raise HTTPException(404, "unknown note")

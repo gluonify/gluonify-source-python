@@ -104,8 +104,9 @@ def test_dev_identity(charm: FakeCharm) -> None:
 
 
 def test_dev_identity_refused_on_the_platform() -> None:
+    services = GluonifyServices({**PLATFORM, "SOURCE_DEV": "true"})
     with pytest.raises(RuntimeError, match="refused on the platform"):
-        build(GluonifyServices({**PLATFORM, "SOURCE_DEV": "true"}))
+        build(services)
 
 
 def test_source_overrides_win_over_platform_values(charm: FakeCharm) -> None:
@@ -124,13 +125,15 @@ def test_store_choice() -> None:
     assert effective_store("auto", " ") == "memory"
     assert effective_store("auto", None) == "memory"
     assert effective_store("memory", "db") == "memory"
+    services = GluonifyServices({})
     with pytest.raises(ValueError, match="unknown SOURCE_STORE"):
-        note_store("files", GluonifyServices({}))
+        note_store("files", services)
 
 
 def test_plain_bolt_refused_on_the_platform_and_allowed_for_dev() -> None:
+    services = GluonifyServices({**PLATFORM, "GLUONIFY_GDOWN_BOLT_URL": "bolt://gdown:7687"})
     with pytest.raises(RuntimeError, match="TLS required"):
-        build(GluonifyServices({**PLATFORM, "GLUONIFY_GDOWN_BOLT_URL": "bolt://gdown:7687"}))
+        build(services)
     dev = {
         "SOURCE_DEV": "1",
         "SOURCE_STORE": "gdown",
@@ -149,8 +152,9 @@ def test_platform_driver_options(charm: FakeCharm, gdown: FakeGdown) -> None:
 
 
 def test_gdown_without_database_fails_at_start() -> None:
+    services = GluonifyServices({"SOURCE_STORE": "gdown"})
     with pytest.raises(ValueError, match="needs a dedicated database"):
-        build(GluonifyServices({"SOURCE_STORE": "gdown"}))
+        build(services)
 
 
 def test_openapi(charm: FakeCharm) -> None:
