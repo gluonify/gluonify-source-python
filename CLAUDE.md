@@ -2,8 +2,6 @@
 
 This repository is the **starting point** for a Python (FastAPI + uvicorn) service that runs on Gluonify, the Python counterpart of `gluonify-source`. Read `README.md` first (also `README.fr.md`, `README.es.md`, `README.it.md`, `README.de.md`: keep the five in step). This is an **"en" repository**: code, comments, this file and commit messages in English.
 
-Shared context for every gluonify-* repository: `/Users/a/dev/gluonify/CLAUDE.md` (in French).
-
 ## Commands
 - `uv sync`, then `SOURCE_DEV=1 uv run gluonify-source` (http://localhost:8080, development identity with all roles, notes in memory).
 - `uv run pytest --cov` (57 tests, coverage gate 90 %), `uv run ruff check . && uv run ruff format --check .`.
