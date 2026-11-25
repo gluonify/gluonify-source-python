@@ -85,7 +85,7 @@ Storage sits behind [`NoteStore`](src/gluonify_source/notes/store.py): implement
 
 ## 4. Authentication: Charm tokens
 
-The API verifies bearer tokens issued by **Charm** (JWT, ES256) with `require_roles` of `gluonify.fastapi`: nothing to configure on the platform. The SDK fetches Charm's keys from `GLUONIFY_SERVICE_CHARM_URL`, checks the issuer `GLUONIFY_OIDC_ISSUER` and the audience `GLUONIFY_OIDC_AUDIENCE` (`gluonify-source` by default), and reads the roles from the `roles` claim (`source:read`, `source:write`). A browser UI signs in with Charm itself (authorization code + PKCE, the `@gluonify/ui` kit) using `GET /api/auth-config`; the password is never typed into this application.
+The API verifies bearer tokens issued by **Charm** (JWT, ES256) with `require_roles` of `gluonify.fastapi`: nothing to configure on the platform. The SDK fetches Charm's keys from `GLUONIFY_SERVICE_CHARM_URL`, checks the issuer `GLUONIFY_OIDC_ISSUER` and the audience `GLUONIFY_OIDC_AUDIENCE` (`gluonify-source` by default), and reads the roles from the `roles` claim (`source:read`, `source:write`). A browser UI signs in with Charm itself (authorization code + PKCE, the `@gluonify/ui` kit) using `GET /api/auth-config`; the password is never typed into this application. Deployed for an **organization**, the issuer is that organization's realm (`<charm>/realms/org-<org>`): the SDK reads the keys of `GLUONIFY_OIDC_REALM`, and `/api/auth-config` gives the realm's own endpoints (`/realms/org-<org>/protocol/openid-connect/auth|token|logout`); the platform realm keeps Charm's root endpoints (`/authorize`, `/token`, `/logout`).
 
 ## 5. Storage: memory or gDown
 
@@ -146,7 +146,7 @@ After changing a dependency: `uv lock && uv export --format requirements-txt --n
 ## 8. Testing
 
 ```bash
-uv run pytest --cov          # 57 tests
+uv run pytest --cov          # 65 tests
 uv run ruff check . && uv run ruff format --check .
 ```
 
@@ -157,7 +157,7 @@ Charm is faked by a P-256 key pair whose JWKS the verifier reads; gDown by a fak
 | gluonify-source (Java) | Here |
 |---|---|
 | Notes REST API, roles, validation, OpenAPI | ✅ |
-| Charm tokens, `/api/auth-config` | ✅ |
+| Charm tokens, `/api/auth-config` (platform realm and an organization's) | ✅ unit tests; no e2e of an organization's Python application yet |
 | Gdown store (HTTP API in Java) | ✅ with the `neo4j` driver over Bolt with TLS |
 | Memory store, health ready/live, `/api/platform` | ✅ |
 | Vue UI (Quinoa) | ❌ not ported: serve a built UI with `StaticFiles`, or host it on Field |

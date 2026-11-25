@@ -5,3 +5,4 @@
 3. Port the remaining parts of gluonify-source: Photon webhooks with an idempotent ledger, the files store (`/distributed/std`), documents with Crystallon (needs a Python client), the Vue UI (multilingual en/fr/es/it/de, served by `StaticFiles` or Field), `scripts/rename.py`.
 4. Sites (gluonify-codex/sites): a page for the Python starter (V3-5).
 5. Done 2026-10-15: Swagger UI at `/docs` and OpenAPI at `/openapi.json` (SDK `create_app`; `/q/` belongs to Quarkus), read-only on the platform, blocked by the Higgs ingress in PRD. Left: replay `e2e-source-python.sh`.
+6. Done 2026-11-25: sign-in addresses and token keys follow the organization's realm (`/api/auth-config` built from the issuer as in gluonify-source; the SDK reads `GLUONIFY_OIDC_REALM`), unit tests only. Left: an e2e of a Python application deployed for an organization (`e2e-realms.sh` only deploys the Java one).

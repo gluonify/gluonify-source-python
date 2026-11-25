@@ -9,7 +9,7 @@ from gluonify import GluonifyServices
 from gluonify_source.config import SourceConfig
 from gluonify_source.main import build
 from gluonify_source.notes.stores import effective_store, note_store
-from gluonify_source.platform import charm_url
+from gluonify_source.platform import charm_url, endpoint_base
 
 
 def test_platform_info(charm: FakeCharm, gdown: FakeGdown) -> None:
@@ -60,6 +60,27 @@ def test_auth_config_on_the_platform(charm: FakeCharm, gdown: FakeGdown) -> None
         "logoutUrl": "https://id.gluonify.lan/logout",
         "scope": "openid",
     }
+
+
+def test_auth_config_of_an_organization(charm: FakeCharm, gdown: FakeGdown) -> None:
+    env = {**PLATFORM, "GLUONIFY_OIDC_CLIENT_ID": "app-source", "GLUONIFY_OIDC_ISSUER": "https://id.gluonify.lan/realms/org-acme"}
+    body = client(env, charm, gdown).get("/api/auth-config").json()
+    assert body["authorizationUrl"] == "https://id.gluonify.lan/realms/org-acme/protocol/openid-connect/auth"
+    assert body["tokenUrl"] == "https://id.gluonify.lan/realms/org-acme/protocol/openid-connect/token"
+    assert body["logoutUrl"] == "https://id.gluonify.lan/realms/org-acme/protocol/openid-connect/logout"
+
+
+@pytest.mark.parametrize(
+    ("issuer", "expected"),
+    [
+        (ISS, "https://c"),
+        ("https://id.gluonify.lan/realms/org-acme/", "https://c/realms/org-acme"),
+        ("https://x", "https://c"),
+        (None, "https://c"),
+    ],
+)
+def test_endpoint_base(issuer: str | None, expected: str) -> None:
+    assert endpoint_base("https://c", issuer) == expected
 
 
 def test_auth_config_overrides(charm: FakeCharm) -> None:
@@ -118,6 +139,14 @@ def test_source_overrides_win_over_platform_values(charm: FakeCharm) -> None:
     assert v.audience == "gluonify-mine"
     assert v.issuer == ISS
     assert v.jwks_url == "http://charm:8080/realms/gluonify/protocol/openid-connect/certs"
+
+
+def test_verifier_follows_the_organization_realm() -> None:
+    env = {**PLATFORM, "GLUONIFY_OIDC_REALM": "org-acme", "GLUONIFY_OIDC_ISSUER": "https://id.gluonify.lan/realms/org-acme"}
+    app = build(GluonifyServices(env), gdown=lambda s: None)  # type: ignore[arg-type,return-value]
+    v = app.state.gluonify_auth.verifier()
+    assert v.issuer == "https://id.gluonify.lan/realms/org-acme"
+    assert v.jwks_url == "http://charm:8080/realms/org-acme/protocol/openid-connect/certs"
 
 
 def test_store_choice() -> None:
