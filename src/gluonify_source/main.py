@@ -5,6 +5,7 @@ Run it: ``uv run gluonify-source`` (``0.0.0.0:$PORT``, 8080 by default), or ``uv
 
 from __future__ import annotations
 
+import logging
 from collections.abc import Callable
 
 from fastapi import FastAPI
@@ -12,12 +13,13 @@ from gluonify import CharmVerifier, GluonifyServices, Principal
 from gluonify.fastapi import GluonifyAuth, create_app, serve
 
 from . import __version__, platform
-from .config import READ, WRITE, SourceConfig
+from .config import READ, WRITE, SourceConfig, issuer_override_warning
 from .notes import api
 from .notes.store import Driver
 from .notes.stores import note_store
 
 DEV = Principal("dev", frozenset({READ, WRITE}), {})
+LOG = logging.getLogger(__name__)
 
 
 def build(
@@ -29,6 +31,8 @@ def build(
     """Builds the application. ``verifier`` and ``gdown`` are replaceable in tests (as the Java tests fake Charm and Gdown)."""
     s = services or GluonifyServices()
     cfg = SourceConfig.from_env(s.environ)
+    if (warning := issuer_override_warning(s.environ)) is not None:
+        LOG.warning("%s", warning)  # once per start; the overrides still win (refusing to start is an open question of plan.md)
 
     def charm() -> CharmVerifier:
         v = CharmVerifier.from_env(s, audience=cfg.audience, issuer=cfg.issuer)

@@ -133,6 +133,8 @@ Tutta la configurazione viene dall'ambiente (la piattaforma, o la cassaforte Top
 | `SOURCE_AUTH_SCOPE` | `openid` | ambito dell'accesso del browser |
 | `GLUONIFY_GDOWN_BOLT_URL`, `GLUONIFY_GDOWN_CA_FILE` | iniettate dalla piattaforma | indirizzo Bolt di gDown (`bolt+s://`, solo TLS) e la CA di fiducia |
 
+**Emittente forzato e realm dell'organizzazione.** Le chiavi dei token seguono sempre `GLUONIFY_OIDC_REALM` (iniettata per un'applicazione di un'organizzazione), mentre `GLUONIFY_SOURCE_OIDC_ISSUER` sostituisce l'emittente che i token devono riportare. Quando il realm è impostato e l'emittente forzato non è quello di quel realm (`<indirizzo pubblico o interno di Charm>/realms/<realm>`, confrontato senza barra finale né maiuscole di schema e host), l'applicazione registra **un avviso all'avvio** che nomina le due variabili e le parti di realm, e si avvia comunque con l'emittente forzato: tutti i token del realm saranno rifiutati. Togliere l'emittente forzato o impostarvi l'emittente del realm. Nulla di ciò raggiunge un client. L'audience forzata non è verificata: l'audience (`gluonify-<app>`) non dipende dal realm.
+
 ## 7. Costruire e distribuire
 
 Bup riconosce un progetto Python dal suo `pyproject.toml`, esige il file di blocco, analizza il codice (SonarQube, regole sulle chiamate pericolose, `pip-audit`), installa `requirements.lock` con `pip install --require-hashes` in un venv, e firma codice e venv in un gzip. **`uses` è dedotto** dai marcatori `[gluonify.uses]` delle distribuzioni dell'SDK installate in quel venv (`gluonify` dichiara `charm`; la distribuzione `neo4j` fa dedurre `gdown`); `gluonify.json` dice solo ciò che non si può dedurre:
@@ -146,7 +148,7 @@ Dopo aver cambiato una dipendenza: `uv lock && uv export --format requirements-t
 ## 8. Testare
 
 ```bash
-uv run pytest --cov          # 57 test
+uv run pytest --cov          # 82 test
 uv run ruff check . && uv run ruff format --check .
 ```
 

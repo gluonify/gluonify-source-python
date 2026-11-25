@@ -4,7 +4,7 @@ This repository is the **starting point** for a Python (FastAPI + uvicorn) servi
 
 ## Commands
 - `uv sync`, then `SOURCE_DEV=1 uv run gluonify-source` (http://localhost:8080, development identity with all roles, notes in memory).
-- `uv run pytest --cov` (65 tests, coverage gate 90 %), `uv run ruff check . && uv run ruff format --check .`.
+- `uv run pytest --cov` (82 tests, coverage gate 90 %), `uv run ruff check . && uv run ruff format --check .`.
 - After any dependency change: `uv lock` then `uv export --format requirements-txt --no-dev --no-emit-project -o requirements.lock` (Bup installs that file with `pip install --require-hashes`); commit both.
 - The SDK (`gluonify[fastapi]`: the distribution `gluonify` with its extra `fastapi`) comes from `../gluonify-plasma-python` (path sources in `pyproject.toml`) until it is on PyPI; then remove `[tool.uv.sources]` and lock again.
 

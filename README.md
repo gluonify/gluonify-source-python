@@ -133,6 +133,8 @@ All configuration comes from the environment (the platform, or the Top vault); n
 | `SOURCE_AUTH_SCOPE` | `openid` | scope of the browser sign-in |
 | `GLUONIFY_GDOWN_BOLT_URL`, `GLUONIFY_GDOWN_CA_FILE` | injected by the platform | gDown's Bolt address (`bolt+s://`, TLS only) and the CA to trust |
 
+**Issuer override and organization realm.** The token keys always follow `GLUONIFY_OIDC_REALM` (injected for an application of an organization), while `GLUONIFY_SOURCE_OIDC_ISSUER` replaces the issuer the tokens must carry. When the realm is set and the override is not that realm's issuer (`<Charm's public or internal address>/realms/<realm>`, compared without trailing slash nor case of scheme and host), the application logs **one warning at startup** naming both variables and the realm parts, and still starts with the override: every token of the realm will be refused. Remove the override, or set it to the realm's issuer. Nothing of this reaches a client. The audience override is not checked: the audience (`gluonify-<app>`) does not depend on the realm.
+
 ## 7. Building and deploying
 
 Bup detects a Python project by its `pyproject.toml`, requires the lock file, analyses the code (SonarQube, dangerous-call rules, `pip-audit`), installs `requirements.lock` with `pip install --require-hashes` into a venv, and signs code and venv in one gzip. **`uses` is inferred** from the `[gluonify.uses]` markers of the SDK distributions installed in that venv (`gluonify` declares `charm`; the `neo4j` distribution infers `gdown`), so `gluonify.json` only says what cannot be inferred:
@@ -146,7 +148,7 @@ After changing a dependency: `uv lock && uv export --format requirements-txt --n
 ## 8. Testing
 
 ```bash
-uv run pytest --cov          # 65 tests
+uv run pytest --cov          # 82 tests
 uv run ruff check . && uv run ruff format --check .
 ```
 

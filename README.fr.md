@@ -133,6 +133,8 @@ Toute la configuration vient de l'environnement (la plateforme, ou le coffre Top
 | `SOURCE_AUTH_SCOPE` | `openid` | portée de la connexion du navigateur |
 | `GLUONIFY_GDOWN_BOLT_URL`, `GLUONIFY_GDOWN_CA_FILE` | injectées par la plateforme | adresse Bolt de gDown (`bolt+s://`, TLS seulement) et AC de confiance |
 
+**Émetteur forcé et royaume d'organisation.** Les clés des jetons suivent toujours `GLUONIFY_OIDC_REALM` (injectée pour une application d'organisation), tandis que `GLUONIFY_SOURCE_OIDC_ISSUER` remplace l'émetteur que les jetons doivent porter. Quand le royaume est défini et que l'émetteur forcé n'est pas celui de ce royaume (`<adresse publique ou interne de Charm>/realms/<royaume>`, comparé sans barre finale ni casse du schéma et de l'hôte), l'application écrit **un avertissement au démarrage** qui nomme les deux variables et les parties royaume, et démarre quand même avec l'émetteur forcé : tous les jetons du royaume seront refusés. Retirez l'émetteur forcé, ou mettez-y l'émetteur du royaume. Rien de cela n'atteint un client. L'audience forcée n'est pas vérifiée : l'audience (`gluonify-<app>`) ne dépend pas du royaume.
+
 ## 7. Construire et déployer
 
 Bup reconnaît un projet Python à son `pyproject.toml`, exige le fichier de verrouillage, analyse le code (SonarQube, règles d'appels dangereux, `pip-audit`), installe `requirements.lock` par `pip install --require-hashes` dans un venv, et signe le code et le venv dans un gzip. **`uses` est déduit** des marqueurs `[gluonify.uses]` des distributions du SDK installées dans ce venv (`gluonify` déclare `charm` ; la distribution `neo4j` fait déduire `gdown`) ; `gluonify.json` ne dit donc que ce qui ne se déduit pas :
@@ -146,7 +148,7 @@ Après un changement de dépendance : `uv lock && uv export --format requirement
 ## 8. Tester
 
 ```bash
-uv run pytest --cov          # 57 tests
+uv run pytest --cov          # 82 tests
 uv run ruff check . && uv run ruff format --check .
 ```
 

@@ -133,6 +133,8 @@ Die gesamte Konfiguration kommt aus der Umgebung (der Plattform oder dem Tresor 
 | `SOURCE_AUTH_SCOPE` | `openid` | Scope der Browser-Anmeldung |
 | `GLUONIFY_GDOWN_BOLT_URL`, `GLUONIFY_GDOWN_CA_FILE` | von der Plattform injiziert | Bolt-Adresse von gDown (`bolt+s://`, nur TLS) und die vertrauenswürdige CA |
 
+**Erzwungener Aussteller und Realm einer Organisation.** Die Token-Schlüssel folgen immer `GLUONIFY_OIDC_REALM` (für eine Anwendung einer Organisation injiziert), während `GLUONIFY_SOURCE_OIDC_ISSUER` den Aussteller ersetzt, den die Token tragen müssen. Ist der Realm gesetzt und der erzwungene Aussteller nicht der dieses Realms (`<öffentliche oder interne Adresse von Charm>/realms/<realm>`, verglichen ohne abschließenden Schrägstrich und ohne Groß-/Kleinschreibung von Schema und Host), schreibt die Anwendung **beim Start eine Warnung**, die beide Variablen und die Realm-Teile nennt, und startet trotzdem mit dem erzwungenen Aussteller: alle Token des Realms werden abgelehnt. Entfernen Sie den erzwungenen Aussteller oder setzen Sie ihn auf den Aussteller des Realms. Nichts davon erreicht einen Client. Die erzwungene Audience wird nicht geprüft: die Audience (`gluonify-<app>`) hängt nicht vom Realm ab.
+
 ## 7. Bauen und bereitstellen
 
 Bup erkennt ein Python-Projekt an seiner `pyproject.toml`, verlangt die Sperrdatei, analysiert den Code (SonarQube, Regeln für gefährliche Aufrufe, `pip-audit`), installiert `requirements.lock` mit `pip install --require-hashes` in ein venv und signiert Code und venv in einem gzip. **`uses` wird abgeleitet** aus den Markern `[gluonify.uses]` der in diesem venv installierten SDK-Distributionen (`gluonify` deklariert `charm`; die Distribution `neo4j` lässt `gdown` ableiten); `gluonify.json` enthält daher nur, was sich nicht ableiten lässt:
@@ -146,7 +148,7 @@ Nach einer Änderung der Abhängigkeiten: `uv lock && uv export --format require
 ## 8. Testen
 
 ```bash
-uv run pytest --cov          # 57 Tests
+uv run pytest --cov          # 82 Tests
 uv run ruff check . && uv run ruff format --check .
 ```
 
