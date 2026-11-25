@@ -157,7 +157,7 @@ Charm is faked by a P-256 key pair whose JWKS the verifier reads; gDown by a fak
 | gluonify-source (Java) | Here |
 |---|---|
 | Notes REST API, roles, validation, OpenAPI | ✅ |
-| Charm tokens, `/api/auth-config` (platform realm and an organization's) | ✅ unit tests; no e2e of an organization's Python application yet |
+| Charm tokens, `/api/auth-config` (platform realm and an organization's) | ✅ unit tests and e2e (`e2e-source-python.sh` section H, organization realm: 51/51 on 2026-11-25, x86_64) |
 | Gdown store (HTTP API in Java) | ✅ with the `neo4j` driver over Bolt with TLS |
 | Memory store, health ready/live, `/api/platform` | ✅ |
 | Vue UI (Quinoa) | ❌ not ported: serve a built UI with `StaticFiles`, or host it on Field |
