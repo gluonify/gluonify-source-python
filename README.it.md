@@ -158,10 +158,10 @@ Charm è simulato da una coppia di chiavi P-256 il cui JWKS è letto dal verific
 
 | gluonify-source (Java) | Qui |
 |---|---|
-| API REST delle note, ruoli, validazione, OpenAPI | ✅ |
+| API REST delle note, ruoli, validazione, OpenAPI | ✅ (`tests/test_notes.py`) |
 | Token di Charm, `/api/auth-config` | ✅ |
-| Archiviazione Gdown (API HTTP in Java) | ✅ con il driver `neo4j` su Bolt con TLS |
-| Archiviazione in memoria, salute ready/live, `/api/platform` | ✅ |
+| Archiviazione Gdown (API HTTP in Java) | ✅ (`tests/test_gdown.py`) con il driver `neo4j` su Bolt con TLS |
+| Archiviazione in memoria, salute ready/live, `/api/platform` | ✅ (`tests/test_platform.py`) |
 | Interfaccia Vue (Quinoa) | ❌ non trasposta: servire un'interfaccia costruita con `StaticFiles`, o ospitarla su Field |
 | Archiviazione su file (`/distributed/std`) | ❌ |
 | Webhook di Photon (`/hooks`), documenti con Crystallon | ❌ (ancora nessun client Python nell'SDK) |

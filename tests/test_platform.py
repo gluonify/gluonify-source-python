@@ -8,6 +8,7 @@ from gluonify import GluonifyServices
 
 from gluonify_source.config import SourceConfig
 from gluonify_source.main import build
+from gluonify_source.notes.store import MemoryNoteStore
 from gluonify_source.notes.stores import effective_store, note_store
 from gluonify_source.platform import charm_url, endpoint_base
 
@@ -157,6 +158,12 @@ def test_store_choice() -> None:
     services = GluonifyServices({})
     with pytest.raises(ValueError, match="unknown SOURCE_STORE"):
         note_store("files", services)
+
+
+def test_memory_store_reports_its_kind_and_is_always_ready() -> None:
+    store = MemoryNoteStore()
+    assert store.kind() == "memory"
+    assert store.ready() is True
 
 
 def test_plain_bolt_refused_on_the_platform_and_allowed_for_dev() -> None:

@@ -158,10 +158,10 @@ Charm est simulé par une paire de clés P-256 dont le vérificateur lit le JWKS
 
 | gluonify-source (Java) | Ici |
 |---|---|
-| API REST des notes, rôles, validation, OpenAPI | ✅ |
+| API REST des notes, rôles, validation, OpenAPI | ✅ (`tests/test_notes.py`) |
 | Jetons de Charm, `/api/auth-config` | ✅ |
-| Stockage Gdown (API HTTP en Java) | ✅ par le pilote `neo4j` sur Bolt avec TLS |
-| Stockage en mémoire, santé ready/live, `/api/platform` | ✅ |
+| Stockage Gdown (API HTTP en Java) | ✅ (`tests/test_gdown.py`) par le pilote `neo4j` sur Bolt avec TLS |
+| Stockage en mémoire, santé ready/live, `/api/platform` | ✅ (`tests/test_platform.py`) |
 | Interface Vue (Quinoa) | ❌ non reprise : servir une interface construite par `StaticFiles`, ou l'héberger sur Field |
 | Stockage en fichiers (`/distributed/std`) | ❌ |
 | Webhooks de Photon (`/hooks`), documents avec Crystallon | ❌ (pas encore de client Python dans le SDK) |
